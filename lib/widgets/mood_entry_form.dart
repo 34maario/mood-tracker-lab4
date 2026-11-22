@@ -17,6 +17,10 @@ class MoodEntryForm extends StatefulWidget {
 class _MoodEntryFormState extends State<MoodEntryForm> {
   int? _score;
 
+  /// Error messages shown under each field. `null` means no error.
+  String? _scoreError;
+  String? _noteError;
+
   final TextEditingController _noteController = TextEditingController();
 
   @override
@@ -26,7 +30,15 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
   }
 
   void _save() {
-    if (_score == null) return;
+    // Check every field first, so the user sees all problems at once.
+    setState(() {
+      _scoreError = _score == null ? 'Choose a score from 1 to 10' : null;
+      _noteError = _noteController.text.length > maxNoteLength
+          ? 'Note must be at most $maxNoteLength characters'
+          : null;
+    });
+
+    if (_scoreError != null || _noteError != null) return;
 
     final note = _noteController.text.trim();
     final entry = MoodEntry(
@@ -61,19 +73,28 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
               onChanged: (score) {
                 setState(() {
                   _score = score;
+                  _scoreError = null;
                 });
               },
             ),
+            if (_scoreError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  _scoreError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
             const SizedBox(height: 12),
             TextField(
               controller: _noteController,
-              decoration: InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(
+                labelText: 'Note (optional)',
+                errorText: _noteError,
+              ),
             ),
             const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _score == null ? null : _save,
-              child: const Text('Save entry'),
-            ),
+            FilledButton(onPressed: _save, child: const Text('Save entry')),
           ],
         ),
       ),
